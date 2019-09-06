@@ -8,13 +8,16 @@ export default {
       return await User.findOne({ _id }).exec();
     },
     users: async (parent, args, context, info) => {
+      console.log(context);
       const users = await User.find({})
         .populate()
         .exec();
 
       return users.map(u => ({
         _id: u._id.toString(),
-        name: u.name,
+        username: u.username,
+        firstname: u.firstname,
+        lastname: u.lastname,
         email: u.email,
         age: u.age,
         lists: u.lists,
@@ -23,13 +26,37 @@ export default {
     }
   },
   Mutation: {
-    createUser: async (parent, { user }, context, info) => {
-      const newUser = await new User({
-        name: user.name,
-        email: user.email,
-        age: user.age
-      });
+    signup: async (parent, args, ctx) => {
+      const user = await new User(args);
+      const token = User.generateJWT();
+      return {
+        user,
+        token
+      };
+    },
+    login: async (parent, args, context, info) => {
+      const user = await User.findOne({ email }).exec();
+      if (!user) {
+        throw new Error("No such user found");
+      }
+      const valid = User.validatePassword(args.password);
+      if (!valid) {
+        throw new Error("Invalid password");
+      }
 
+      const token = User.generateJWT();
+
+      return {
+        token,
+        user
+      };
+    },
+    createUser: async (parent, { user }, ctx) => {
+      const newUser = await new User({
+        username: user.username,
+        email: user.email,
+        password: user.password
+      });
       return new Promise((resolve, reject) => {
         newUser.save((err, res) => {
           err ? reject(err) : resolve(res);

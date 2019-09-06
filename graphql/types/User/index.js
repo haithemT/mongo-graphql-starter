@@ -1,7 +1,9 @@
 export default `
   type User {
     _id: String!
-    name: String!
+    username: String!
+    firstname: String!
+    lastname: String!
     email: String!
     age: Int!
     lists: [List!]!
@@ -13,20 +15,27 @@ export default `
     users: [User!]!
   }
 
+  type AuthPayload {
+    token: String
+    user: User
+  }
+
   type Mutation {
+    signup(user:CreateUserInput): AuthPayload
+    login(email: String!, password: String!): AuthPayload
     createUser(user: CreateUserInput): User!
     updateUser(_id: String!, user: UpdateUserInput!): User!
     deleteUser(_id: String!): User!
   }
 
   input CreateUserInput {
-    name: String!
+    username: String!
     email: String!
-    age: Int!
+    password: String!
   }
   
   input UpdateUserInput {
-    name: String
+    username: String
     email: String
     age: Int
   } 
