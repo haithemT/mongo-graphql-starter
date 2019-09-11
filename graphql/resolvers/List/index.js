@@ -2,20 +2,27 @@ import User from "../../../server/models/User";
 import List from "../../../server/models/List";
 import Item from "../../../server/models/Item";
 
-import { transformList } from "../merge";
+import {transformList} from "../merge";
 
 export default {
-  Query: {
-    list: async (parent, { _id }, context, info) => {
-      return await List.findOne({ _id }).exec();
+  Query : {
+    list: async(parent, {
+      _id
+    }, context, info) => {
+      return await List
+        .findOne({_id})
+        .exec();
     },
-    lists: async (parent, args, context, info) => {
-      const res = await List.find({})
+    lists: async(parent, args, context, info) => {
+      const res = await List
+        .find({})
         .populate()
         .exec();
 
       return res.map(u => ({
-        _id: u._id.toString(),
+        _id: u
+          ._id
+          .toString(),
         title: u.title,
         published: u.published,
         author: u.author,
@@ -24,20 +31,19 @@ export default {
       }));
     }
   },
-  Mutation: {
-    createList: async (parent, { list }, context, info) => {
-      const newList = await new List({
-        title: list.title,
-        published: list.published,
-        author: list.author,
-        date: list.date
-      });
+  Mutation : {
+    createList: async(parent, {
+      list
+    }, context, info) => {
+      const newList = await new List({title: list.title, published: list.published, author: list.author, date: list.date});
       let createdList;
       try {
         // const result = await newList.save();
         const result = await new Promise((resolve, reject) => {
           newList.save((err, res) => {
-            err ? reject(err) : resolve(res);
+            err
+              ? reject(err)
+              : resolve(res);
           });
         });
         createdList = transformList(result);
@@ -46,24 +52,43 @@ export default {
         if (!creator) {
           throw new Error("User not found.");
         }
-        creator.lists.push(newList);
+        creator
+          .lists
+          .push(newList);
         await creator.save();
+        context
+          .pubsub
+          .publish('CREATED', {
+            listCreated: {
+              mutation: 'CREATED',
+              list: createdList
+            }
+          });
         return createdList;
       } catch (error) {
         console.log(error);
         throw error;
       }
     },
-    updateList: async (parent, { _id, list }, context, info) => {
+    updateList: async(parent, {
+      _id,
+      list
+    }, context, info) => {
       return new Promise((resolve, reject) => {
-        List.findByIdAndUpdate(_id, { $set: { ...list } }, { new: true }).exec(
-          (err, res) => {
-            err ? reject(err) : resolve(res);
+        List.findByIdAndUpdate(_id, {
+          $set: {
+            ...list
           }
-        );
+        }, {new: true}).exec((err, res) => {
+          err
+            ? reject(err)
+            : resolve(res);
+        });
       });
     },
-    deleteList: async (parent, { _id }, context, info) => {
+    deleteList: async(parent, {
+      _id
+    }, context, info) => {
       try {
         // searching for creator of the list and deleting it from the list
         const list = await List.findById(_id);
@@ -71,15 +96,23 @@ export default {
         if (!creator) {
           throw new Error("user not found.");
         }
-        const index = creator.lists.indexOf(_id);
+        const index = creator
+          .lists
+          .indexOf(_id);
         if (index > -1) {
-          creator.lists.splice(index, 1);
+          creator
+            .lists
+            .splice(index, 1);
         }
         await creator.save();
         return new Promise((resolve, reject) => {
-          List.findByIdAndDelete(_id).exec((err, res) => {
-            err ? reject(err) : resolve(res);
-          });
+          List
+            .findByIdAndDelete(_id)
+            .exec((err, res) => {
+              err
+                ? reject(err)
+                : resolve(res);
+            });
         });
       } catch (error) {
         console.log(error);
@@ -87,19 +120,23 @@ export default {
       }
     }
   },
-  Subscription: {
-    list: {
-      subscribe: (parent, args, { pubsub }) => {
-        //return pubsub.asyncIterator(channel)
+  Subscription : {
+    listCreated: {
+      subscribe: (parent, args, {pubsub}) => {
+        return pubsub.asyncIterator('CREATED')
       }
     }
   },
-  List: {
-    author: async ({ author }, args, context, info) => {
+  List : {
+    author: async({
+      author
+    }, args, context, info) => {
       return await User.findById(author);
     },
-    items: async ({ author }, args, context, info) => {
-      return await Item.find({ author });
+    items: async({
+      author
+    }, args, context, info) => {
+      return await Item.find({author});
     }
   }
 };

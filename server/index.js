@@ -63,21 +63,26 @@ server.express.use(
 );
 server.express.use(passport.initialize());
 server.express.use(passport.session());
-server.express.post("/graphql", (req, res, next) => {
-  passport.authenticate("local", (err, user, info) => {
-    if (err) {
-      return res
-        .status(500)
-        .send("Authentication failure due to an internal server error");
-    } else if (!user) {
-      return res.status(401).send("not authorized");
-    } else {
-      user.token = user.generateJWT();
 
-      return res.json({ user: user.toAuthJSON() });
-    }
-  })(req, res, next);
-});
+// server.express.post("/authorize", (req, res, next) => {
+
+// });
+
+// server.express.post("/graphql", (req, res, next) => {
+//   passport.authenticate("local", (err, user, info) => {
+//     if (err) {
+//       return res
+//         .status(500)
+//         .send("Authentication failure due to an internal server error");
+//     } else if (!user) {
+//       return res.status(401).send("not authorized");
+//     } else {
+//       user.token = user.generateJWT();
+
+//       return res.json({ user: user.toAuthJSON() });
+//     }
+//   })(req, res, next);
+// });
 
 server.start(options, ({ port }) => {
   console.log(`🚀 Server is running on http://localhost:${port}`);

@@ -7,7 +7,6 @@ export default `
   type List {
     _id: ID!
     title: String!
-    body: String!
     published: Boolean!
     author: User!
     items: [Item!]!
@@ -26,7 +25,7 @@ export default `
   }
 
   type Subscription {
-    list: ListSubscriptionPayload!
+    listCreated: ListSubscriptionPayload!
   }
 
   type ListSubscriptionPayload {
@@ -41,7 +40,6 @@ export default `
 
   input CreateListInput {
     title: String!
-    body: String!
     published: Boolean!
     author: ID!
     date: DatesInput
@@ -49,7 +47,6 @@ export default `
   
   input UpdateListInput {
     title: String
-    body: String
     published: Boolean
     date: DatesInput
   }
