@@ -34,18 +34,17 @@ export default {
         token
       };
     },
-    login: async (parent, args, context, info) => {
+    login: async (parent, { email, password }, context, info) => {
       const user = await User.findOne({ email }).exec();
       if (!user) {
         throw new Error("No such user found");
       }
-      const valid = User.validatePassword(args.password);
+      const valid = user.validatePassword(password);
       if (!valid) {
         throw new Error("Invalid password");
       }
-
-      const token = User.generateJWT();
-
+      const token = user.generateJWT();
+      context.request.res.cookie("jwt", token);
       return {
         token,
         user
