@@ -5,12 +5,15 @@ import session from "express-session";
 import ms from "ms";
 import passport from "passport";
 import bodyParser from "body-parser";
+import cookieParser from "cookie-parser";
 import "../config/passport";
+
+import { permissions } from "../graphql/permissions";
 
 import schema from "../graphql/";
 import { models } from "./config/db/";
 
-const { mongoURI: db } = process.env;
+const { MONGO_URI: db, FRONTEND_ENDPOINT } = process.env;
 
 const pubsub = new PubSub();
 
@@ -24,14 +27,14 @@ const options = {
   },
   cors: {
     credentials: true,
-    origin: ["http://localhost:4000"] // your frontend url.
+    origin: [FRONTEND_ENDPOINT] // your frontend url.
   }
 };
 
 const context = req => ({
   models,
   pubsub,
-  req: req.request
+  ...req
 });
 
 // Connect to MongoDB with Mongoose.
@@ -45,7 +48,8 @@ mongoose
 
 const server = new GraphQLServer({
   schema,
-  context
+  context,
+  middlewares: [permissions]
 });
 server.express.use(bodyParser.json());
 // session middleware
@@ -63,26 +67,13 @@ server.express.use(
 );
 server.express.use(passport.initialize());
 server.express.use(passport.session());
+server.express.use(cookieParser());
 
-// server.express.post("/authorize", (req, res, next) => {
-
-// });
-
-// server.express.post("/graphql", (req, res, next) => {
-//   passport.authenticate("local", (err, user, info) => {
-//     if (err) {
-//       return res
-//         .status(500)
-//         .send("Authentication failure due to an internal server error");
-//     } else if (!user) {
-//       return res.status(401).send("not authorized");
-//     } else {
-//       user.token = user.generateJWT();
-
-//       return res.json({ user: user.toAuthJSON() });
-//     }
-//   })(req, res, next);
-// });
+server.express.get("/logout", function(req, res) {
+  req.logout();
+  res.clearCookie("jwt");
+  res.redirect(FRONTEND_ENDPOINT);
+});
 
 server.start(options, ({ port }) => {
   console.log(`🚀 Server is running on http://localhost:${port}`);
